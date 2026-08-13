@@ -45,7 +45,7 @@ Telegram-бот, разработанный для работы в качест�
 ## Запуск бота
 
 ```bash
-python -m bot.main
+python3 -m bot.main
 ```
 
 ## Команды
