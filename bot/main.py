@@ -137,6 +137,10 @@ async def cmd_profile(message: Message):
 
 @dp.message(Command("stats"))
 async def cmd_stats(message: Message):
+@dp.message(Command("get_id"))
+async def cmd_get_id(message: Message):
+    await message.answer(f"ID этого чата: {message.chat.id}")
+
     total, users = await get_chat_stats(message.chat.id)
     if total == 0:
         await message.answer("📊 В базе еще нет сообщений для статистики.")
