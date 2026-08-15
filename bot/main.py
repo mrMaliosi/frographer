@@ -96,15 +96,16 @@ async def cmd_summarize(message: Message):
             date_str = date_arg
             messages = await get_messages_by_day(message.chat.id, date_str)
     else:
+        # Этот блок на случай, если args пуст (хотя при наличии команды len(args) >= 1)
         date_str = today
         messages = await get_messages_by_day(message.chat.id, date_str)
-
+    
     if not messages:
         await message.answer(f"⚠️ За {date_str} сообщений не найдено.")
         return
 
     summary = await summarizer.summarize_messages(messages)
-    await send_long_message(message, f"📅 Сводка за {date_str}:\n\n{summary}")
+    await send_long_message(message, f"📝 Сводка за {date_str}:\n\n{summary}")
 
 @dp.message(Command("profile"))
 async def cmd_profile(message: Message):
@@ -122,7 +123,7 @@ async def cmd_profile(message: Message):
             target_id = await get_user_id_by_username(message.chat.id, username)
             if target_id:
                 target_name = f"@{username}"
-
+    
     if not target_id:
         await message.answer("❌ Пожалуйста, используйте /profile в ответ на сообщение или укажите @никнейм.")
         return
@@ -135,12 +136,12 @@ async def cmd_profile(message: Message):
     profile = await summarizer.characterize_user(target_name, messages)
     await send_long_message(message, f"👤 Профиль пользователя {target_name}:\n\n{profile}")
 
-@dp.message(Command("stats"))
-async def cmd_stats(message: Message):
 @dp.message(Command("get_id"))
 async def cmd_get_id(message: Message):
     await message.answer(f"ID этого чата: {message.chat.id}")
 
+@dp.message(Command("stats"))
+async def cmd_stats(message: Message):
     total, users = await get_chat_stats(message.chat.id)
     if total == 0:
         await message.answer("📊 В базе еще нет сообщений для статистики.")
@@ -150,17 +151,13 @@ async def cmd_get_id(message: Message):
     from collections import Counter
     import emoji
     
-    # Топ пользователей - экранируем имена для HTML
     user_stats = "\n".join([f"{html.escape(str(u[1]))}: {u[2]} сообщ." for u in users[:10]])
     
-    # Топ слов и эмодзи - обрабатываем итеративно через генератор (защита от OOM)
     all_words = []
     all_emojis = []
     async for t in get_all_texts_iteratively(message.chat.id):
-        # Слова
         words = re.findall(r'\b\w{3,}\b', t.lower())
         all_words.extend(words)
-        # Эмодзи
         emojis_in_text = emoji.emoji_list(t)
         all_emojis.extend([e['emoji'] for e in emojis_in_text])
     
@@ -191,11 +188,9 @@ async def cmd_bad_yandex(message: Message):
 
 @dp.message()
 async def handle_all_messages(message: Message):
-    # Исключаем команды из логирования
     if message.text and message.text.startswith('/'):
         return
 
-    # 1. Логируем сообщение в БД
     text = message.text or message.caption
     if text:
         await log_message(
@@ -206,10 +201,8 @@ async def handle_all_messages(message: Message):
             text=text
         )
     
-    # 2. Проверяем, является ли этот пользователь "целью" для повторения
     target_id = await get_repeat_user(message.chat.id)
     if target_id and message.from_user.id == target_id:
-        # "Повторяем" сообщение.
         await message.answer(f"📢 Повторяю {message.from_user.first_name}: {message.text}")
 
 async def main():
