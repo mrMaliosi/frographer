@@ -96,7 +96,6 @@ async def cmd_summarize(message: Message):
             date_str = date_arg
             messages = await get_messages_by_day(message.chat.id, date_str)
     else:
-        # Этот блок на случай, если args пуст (хотя при наличии команды len(args) >= 1)
         date_str = today
         messages = await get_messages_by_day(message.chat.id, date_str)
     
@@ -133,7 +132,15 @@ async def cmd_profile(message: Message):
         await message.answer(f"⚠️ Я еще не успел собрать достаточно сообщений пользователя {target_name}, чтобы составить профиль.")
         return
 
-    profile = await summarizer.characterize_user(target_name, messages)
+    # Получаем общую статистику чата для оценки общительности
+    total_chat_messages, _ = await get_chat_stats(message.chat.id)
+    user_message_count = len(messages)
+    
+    # Формируем строку статистики
+    activity_stats = f"Пользователь написал {user_message_count} сообщений из {total_chat_messages} всего в чате."
+
+    # Передаем статистику в отдельный параметр, чтобы она была в промпте, но не в списке сообщений
+    profile = await summarizer.characterize_user(target_name, messages, activity_stats=activity_stats)
     await send_long_message(message, f"👤 Профиль пользователя {target_name}:\n\n{profile}")
 
 @dp.message(Command("get_id"))
